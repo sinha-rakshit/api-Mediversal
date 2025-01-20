@@ -1,0 +1,1 @@
+{"error":[{"code":"invalid_string","message":"Time must be in HH:mm format","path":["time"],"validation":"regex"}],"level":"error","message":"Validation error","timestamp":"2025-01-21 05:05:20"}
