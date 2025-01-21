@@ -1,0 +1,120 @@
+openapi: 3.0.0
+info:
+  title: Appointment API
+  version: 1.0.0
+  description: API for managing appointments with buffer time
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+components:
+  schemas:
+    Appointment:
+      type: object
+      required:
+        - date
+        - time
+        - description
+      properties:
+        date:
+          type: string
+          format: date-time
+          description: The date of the appointment
+        time:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: The time of the appointment in HH:mm format
+        description:
+          type: string
+          maxLength: 500
+          description: Description of the appointment
+
+paths:
+  /api/appointments:
+    post:
+      summary: Create a new appointment
+      tags: [Appointments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+      responses:
+        201:
+          description: Appointment created successfully
+        409:
+          description: Time slot not available
+        400:
+          description: Validation error
+    
+    get:
+      summary: Get all appointments
+      tags: [Appointments]
+      responses:
+        200:
+          description: List of appointments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+
+  /api/appointments/{id}:
+    get:
+      summary: Get appointment by ID
+      tags: [Appointments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Appointment ID
+      responses:
+        200:
+          description: Appointment details
+        404:
+          description: Appointment not found
+
+    put:
+      summary: Update appointment
+      tags: [Appointments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Appointment ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+      responses:
+        200:
+          description: Appointment updated successfully
+        404:
+          description: Appointment not found
+        409:
+          description: Time slot not available
+
+    delete:
+      summary: Delete appointment
+      tags: [Appointments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Appointment ID
+      responses:
+        204:
+          description: Appointment deleted successfully
+        404:
+          description: Appointment not found
