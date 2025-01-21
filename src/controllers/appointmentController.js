@@ -63,6 +63,20 @@ const appointmentController = {
       res.status(500).json({ error: 'Failed to retrieve appointments' });
     }
   },
+  getAppointmentById: async (req, res) => {
+    try {
+      logger.info('Retrieving appointment by ID', { appointmentId: req.params.id });
+      const appointment = await Appointment.findById(req.params.id);
+      if (!appointment) {
+        logger.warn('Appointment not found', { appointmentId: req.params.id });
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+      res.json(appointment);
+    } catch (error) {
+      logger.error('Failed to retrieve appointment:', error);
+      res.status(500).json({ error: 'Failed to retrieve appointment' });
+    }
+},
 }
 
 module.exports = appointmentController;
