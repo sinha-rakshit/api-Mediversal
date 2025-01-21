@@ -35,7 +35,7 @@ const appointmentController = {
         return res
           .status(409)
           .json({
-            error: 'Appointment time slot is not available. Please allow a 20-minute buffer between appointments.',
+            error: 'Appointment time slot is not available.',
           });
       }
 
@@ -76,7 +76,67 @@ const appointmentController = {
       logger.error('Failed to retrieve appointment:', error);
       res.status(500).json({ error: 'Failed to retrieve appointment' });
     }
-},
+  },
+  updateAppointment: async (req, res) => {
+    try {
+      const { date, time, description } = req.body;
+
+      logger.info('Updating appointment', { 
+        appointmentId: req.params.id,
+        updates: { date, time }
+      });
+
+      const [hours, minutes] = time.split(':');
+      const appointmentStart = new Date(date);
+      appointmentStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+  
+      const appointmentEnd = new Date(appointmentStart);
+      appointmentEnd.setMinutes(appointmentEnd.getMinutes() + BUFFER_MINUTES);
+  
+      const overlappingAppointment = await Appointment.findOne({
+        _id: { $ne: req.params.id }, 
+        $expr: {
+          $and: [
+            { $lt: ["$date", appointmentEnd] }, 
+            { $gte: ["$date", appointmentStart] }, 
+          ],
+        },
+      });
+  
+      if (overlappingAppointment) {
+        logger.warn('Appointment overlap detected during update', {
+          appointmentId: req.params.id,
+          requestedDate: date,
+          requestedTime: time,
+          existingAppointment: overlappingAppointment
+        });
+        return res.status(409).json({
+          error: 'Appointment time slot is not available.',
+        });
+      }
+  
+      const appointment = await Appointment.findByIdAndUpdate(
+        req.params.id,
+        {
+          date: appointmentStart, 
+          time,
+          description,
+        },
+        { new: true } 
+      );
+  
+      if (!appointment) {
+        logger.warn('Appointment not found', { appointmentId: req.params.id });
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+
+      logger.info('Appointment updated successfully', { appointmentId: appointment._id });
+      res.json(appointment);
+    } catch (error) {
+      logger.error('Failed to update appointment:', error);
+      res.status(500).json({ error: 'Failed to update appointment' });
+    }
+  },
 }
 
 module.exports = appointmentController;
