@@ -137,6 +137,21 @@ const appointmentController = {
       res.status(500).json({ error: 'Failed to update appointment' });
     }
   },
+  deleteAppointment: async (req, res) => {
+    try {
+      logger.info('Deleting appointment', { appointmentId: req.params.id });
+      const appointment = await Appointment.findByIdAndDelete(req.params.id);
+      if (!appointment) {
+        logger.warn('Appointment not found for deletion', { appointmentId: req.params.id });
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+      logger.info('Appointment deleted successfully', { appointmentId: req.params.id });
+      res.status(204).send();
+    } catch (error) {
+      logger.error('Failed to delete appointment:', error);
+      res.status(500).json({ error: 'Failed to delete appointment' });
+    }
+  }
 }
 
 module.exports = appointmentController;
