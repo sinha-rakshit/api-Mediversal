@@ -26,9 +26,20 @@ const appointmentSchema = new mongoose.Schema({
   }
 });
 
-appointmentSchema.pre('save', function(next) {
-  this.updatedAt = new Date();
+appointmentSchema.pre('save', function (next) {
+  const IST_OFFSET = 5.5 * 60 * 60 * 1000; 
+  const now = new Date();
+  this.updatedAt = new Date(now.getTime() + IST_OFFSET);
   next();
 });
 
-module.exports = mongoose.model('Appointment', appointmentSchema);
+appointmentSchema.methods.toIST = function () {
+  const IST_OFFSET = 5.5 * 60 * 60 * 1000; 
+  const utcDate = new Date(this.date);
+  const istDate = new Date(utcDate.getTime() + IST_OFFSET);
+  return istDate;
+};
+
+const Appointment = mongoose.model('Appointment', appointmentSchema);
+
+module.exports = Appointment;
