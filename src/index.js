@@ -7,6 +7,7 @@ const appointmentRoutes = require('./routes/appointments');
 const errorHandler = require('./middleware/errorHandler');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const helmet = require('helmet');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,8 +16,12 @@ connectDB();
 
 app.use(cors());
 app.use(express.json());
+app.use(helmet());
+
+
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 
 app.use('/api/appointments', appointmentRoutes);
 
