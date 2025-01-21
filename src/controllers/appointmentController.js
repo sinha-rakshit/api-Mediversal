@@ -53,6 +53,16 @@ const appointmentController = {
       res.status(500).json({ error: 'Failed to create appointment' });
     }
   },
+  getAppointments: async function(req, res) {
+    try {
+      logger.info('Retrieving all appointments');
+      const appointments = await Appointment.find().sort({ date: 1, time: 1 });
+      res.json(appointments);
+    } catch (error) {
+      logger.error('Failed to retrieve appointments:', error);
+      res.status(500).json({ error: 'Failed to retrieve appointments' });
+    }
+  },
 }
 
 module.exports = appointmentController;
