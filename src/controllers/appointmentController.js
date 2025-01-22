@@ -4,55 +4,54 @@ const logger = require('../config/logger');
 const BUFFER_MINUTES = 20; 
 
 const appointmentController = {
-  createAppointment: async function(req, res) {
+  createAppointment: async function (req, res) {
     try {
       const { date, time, description } = req.body;
-
+  
       logger.info('Creating new appointment', { date, time });
-
+  
       const [hours, minutes] = time.split(':');
       const appointmentStart = new Date(date);
       appointmentStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-      const appointmentEnd = new Date(appointmentStart);
-      appointmentEnd.setMinutes(appointmentEnd.getMinutes() + BUFFER_MINUTES);
-
+  
+      const bufferStart = new Date(appointmentStart);
+      bufferStart.setMinutes(bufferStart.getMinutes() - BUFFER_MINUTES);
+  
+      const bufferEnd = new Date(appointmentStart);
+      bufferEnd.setMinutes(bufferEnd.getMinutes() + BUFFER_MINUTES);
+  
       const overlappingAppointment = await Appointment.findOne({
-        $expr: {
-          $and: [
-            { $lt: ["$date", appointmentEnd] }, 
-            { $gte: ["$date", appointmentStart] }, 
-          ],
+        date: {
+          $gte: bufferStart, 
+          $lt: bufferEnd,   
         },
       });
-
+  
       if (overlappingAppointment) {
-        logger.warn('Appointment overlap detected', { 
+        logger.warn('Appointment overlap detected within buffer time', {
           requestedDate: date,
           requestedTime: time,
-          existingAppointment: overlappingAppointment
+          existingAppointment: overlappingAppointment,
         });
-        return res
-          .status(409)
-          .json({
-            error: 'Appointment time slot is not available.',
-          });
+        return res.status(409).json({
+          error: 'Appointment time slot is not available.',
+        });
       }
-
+  
       const appointment = new Appointment({
-        date: appointmentStart, 
+        date: appointmentStart,
         time,
         description,
       });
-
+  
       await appointment.save();
-      logger.info('Appointment created successfully', { appointmentId: appointment._id });  
+      logger.info('Appointment created successfully', { appointmentId: appointment._id });
       res.status(201).json(appointment);
     } catch (error) {
       logger.error('Failed to create appointment:', error);
       res.status(500).json({ error: 'Failed to create appointment' });
     }
-  },
+  },  
   getAppointments: async function(req, res) {
     try {
       logger.info('Retrieving all appointments');
@@ -80,26 +79,27 @@ const appointmentController = {
   updateAppointment: async (req, res) => {
     try {
       const { date, time, description } = req.body;
-
-      logger.info('Updating appointment', { 
+  
+      logger.info('Updating appointment', {
         appointmentId: req.params.id,
-        updates: { date, time }
+        updates: { date, time },
       });
-
+  
       const [hours, minutes] = time.split(':');
       const appointmentStart = new Date(date);
       appointmentStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
   
-      const appointmentEnd = new Date(appointmentStart);
-      appointmentEnd.setMinutes(appointmentEnd.getMinutes() + BUFFER_MINUTES);
+      const bufferStart = new Date(appointmentStart);
+      bufferStart.setMinutes(bufferStart.getMinutes() - BUFFER_MINUTES);
+  
+      const bufferEnd = new Date(appointmentStart);
+      bufferEnd.setMinutes(bufferEnd.getMinutes() + BUFFER_MINUTES);
   
       const overlappingAppointment = await Appointment.findOne({
-        _id: { $ne: req.params.id }, 
-        $expr: {
-          $and: [
-            { $lt: ["$date", appointmentEnd] }, 
-            { $gte: ["$date", appointmentStart] }, 
-          ],
+        _id: { $ne: req.params.id },
+        date: {
+          $gte: bufferStart,
+          $lt: bufferEnd,
         },
       });
   
@@ -108,7 +108,7 @@ const appointmentController = {
           appointmentId: req.params.id,
           requestedDate: date,
           requestedTime: time,
-          existingAppointment: overlappingAppointment
+          existingAppointment: overlappingAppointment,
         });
         return res.status(409).json({
           error: 'Appointment time slot is not available.',
@@ -118,18 +118,18 @@ const appointmentController = {
       const appointment = await Appointment.findByIdAndUpdate(
         req.params.id,
         {
-          date: appointmentStart, 
+          date: appointmentStart,
           time,
           description,
         },
-        { new: true } 
+        { new: true }
       );
   
       if (!appointment) {
         logger.warn('Appointment not found', { appointmentId: req.params.id });
         return res.status(404).json({ error: 'Appointment not found' });
       }
-
+  
       logger.info('Appointment updated successfully', { appointmentId: appointment._id });
       res.json(appointment);
     } catch (error) {

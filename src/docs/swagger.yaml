@@ -19,7 +19,7 @@ components:
       properties:
         date:
           type: string
-          format: date-time
+          format: date
           description: The date of the appointment
         time:
           type: string
