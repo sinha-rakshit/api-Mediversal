@@ -2,6 +2,8 @@
 
 A RESTful API for managing appointments with automatic buffer time handling, built with Node.js, Express, and MongoDB.
 
+![Demo Video](./screenshots/applicationAPI.gif)
+
 ## Features
 
 - 📅 Create, read, update, and delete appointments
